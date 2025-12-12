@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S.G.P - Sistema de Gestão de Patrulha RAIO</title>
+    <style>
+        /* --- ESTILOS VISUAIS --- */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #eef2f5; 
+            padding: 20px; 
+            font-size: 18px; 
+            color: #333;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: auto; 
+            background: white; 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); 
+            position: relative;
+        }
+        h2 { 
+            color: #0056b3; 
+            text-align: center; 
+            margin-bottom: 30px; 
+            font-size: 28px; 
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+        }
+        
+        /* GRID DE FORMULÁRIO */
+        .form-row { display: flex; gap: 20px; margin-bottom: 15px; }
+        .form-group { flex: 1; }
+
+        /* CAMPOS */
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #2c3e50; font-size: 18px; }
+        input, select {
+            width: 100%; 
+            padding: 12px; 
+            border: 2px solid #bdc3c7; 
+            border-radius: 6px; 
+            box-sizing: border-box;
+            font-size: 18px; 
+        }
+        input:focus, select:focus {
+            border-color: #0056b3;
+            outline: none;
+            background-color: #f0f8ff;
+        }
+        
+        /* CÂMERA */
+        .camera-box {
+            text-align: center;
+            margin-bottom: 25px;
+            background: #000;
+            border-radius: 8px;
+            padding: 10px;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        video { width: 100%; max-height: 300px; border-radius: 6px; display: none; background: #000; }
+        canvas { display: none; }
+        .preview-img { width: 100%; max-height: 300px; border-radius: 6px; display: none; border: 3px solid #28a745; margin-bottom: 10px; }
+        .placeholder-text { color: #ccc; margin-bottom: 15px; }
+        
+        /* BOTÕES */
+        .btn-foto { background-color: #17a2b8; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 18px; width: 100%; margin-top: 10px; }
+        .btn-capturar { background-color: #ffc107; color: #000; font-weight: bold; }
+        .btn-desativar { background-color: #dc3545; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 100%; display: none; margin-top: 10px; }
+        
+        .btn-enviar { 
+            background-color: #28a745; 
+            color: white; 
+            padding: 20px; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            width: 100%; 
+            font-size: 24px; 
+            font-weight: bold;
+            margin-top: 20px;
+            transition: background 0.3s; 
+        }
+        .btn-enviar:hover { background-color: #218838; }
+
+        .btn-novo { background-color: #007bff; color: white; padding: 15px; border: none; border-radius: 8px; width: 100%; font-size: 20px; cursor: pointer; margin-top: 20px; }
+        
+        /* BOTÃO ADMIN */
+        .btn-admin {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #343a40;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            opacity: 0.8;
+        }
+        .btn-admin:hover { opacity: 1; }
+
+        /* ÁREAS ESCONDIDAS */
+        #receiptArea, #adminArea { display: none; }
+
+        /* TABELA ADMIN */
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .admin-table th { background-color: #0056b3; color: white; }
+        .admin-table tr:nth-child(even){background-color: #f2f2f2;}
+        .admin-table img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; }
+
+        /* Recibo */
+        #receiptArea { background-color: #f8f9fa; border: 2px dashed #28a745; padding: 20px; border-radius: 8px; }
+        .receipt-item { display: flex; justify-content: space-between; border-bottom: 1px solid #ddd; padding: 10px 0; }
+        .receipt-label { font-weight: bold; }
+        
+        .message { margin-top: 25px; text-align: center; font-weight: bold; font-size: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <button class="btn-admin" onclick="acessarAdmin()">👮‍♂️ Área do Comandante</button>
+
+    <div id="formArea">
+        <h2>🚔 Registro Operacional RAIO</h2>
+        <form id="registroForm">
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="tipo">Tipo de Registro:</label>
+                    <select id="tipo" required>
+                        <option value="SAIDA">SAÍDA (Início de Turno)</option>
+                        <option value="ENTRADA">ENTRADA (Fim de Turno)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="timestamp">Data/Hora:</label>
+                    <input type="datetime-local" id="timestamp" required>
+                </div>
+            </div>
+    
+            <label for="grad_nome">Graduação e Nome de Guerra:</label>
+            <input type="text" id="grad_nome" placeholder="Ex: SD SERPA" required>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="equipe">Equipe / Prefixo:</label>
+                    <input type="text" id="equipe" placeholder="Ex: RAIO 01" list="listaEquipes" required>
+                    <datalist id="listaEquipes">
+                        <option value="RAIO 01"><option value="RAIO 02"><option value="RAIO 03">
+                        <option value="VTR COMANDO"><option value="VTR APOIO">
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label for="funcao">Função:</label>
+                    <select id="funcao" required>
+                        <option value="" disabled selected>Selecione...</option>
+                        <option value="COMANDANTE">Comandante de Equipe</option>
+                        <option value="SUBCOMANDANTE">Subcomandante / Piloto</option>
+                        <option value="3º HOMEM">3º Homem / Garupa</option>
+                        <option value="4º HOMEM">4º Homem</option>
+                        <option value="MOTORISTA">Motorista Viatura</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="area">Área de Atuação:</label>
+                    <input type="text" id="area" placeholder="Ex: Centro" required>
+                </div>
+                <div class="form-group">
+                    <label for="ht">Número do HT (Rádio):</label>
+                    <input type="text" id="ht" placeholder="Ex: 123456" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="vtr_armamento">ID Viatura/Arma:</label>
+                    <input type="text" id="vtr_armamento" placeholder="Ex: VTR 101 ou PT 40" required>
+                </div>
+                <div class="form-group">
+                    <label for="km_registro">KM Atual (Somente VTR):</label>
+                    <input type="number" id="km_registro" placeholder="0 se for arma" value="0">
+                </div>
+            </div>
+    
+            <label>Confirmação Visual (Obrigatório):</label>
+            <div class="camera-box">
+                <span id="cameraPlaceholder" class="placeholder-text">Câmera desligada</span>
+                <video id="video" autoplay playsinline></video>
+                <img id="fotoPreview" class="preview-img" alt="Foto capturada">
+                <canvas id="canvas"></canvas>
+                
+                <button type="button" id="btnCapturar" class="btn-foto">📸 Ativar Câmera</button>
+                <button type="button" id="btnDesativar" class="btn-desativar">❌ Desativar</button>
+            </div>
+            <input type="hidden" id="foto_base64" required>
+    
+            <button type="submit" class="btn-enviar">✅ REGISTRAR SERVIÇO</button>
+        </form>
+        <div id="statusMessage" class="message"></div>
+    </div>
+
+    <div id="receiptArea">
+        <h2 style="color: #28a745; text-align: center;">✅ Registro Realizado!</h2>
+        <div style="text-align: center;">
+            <img id="rec_foto" style="width: 150px; border-radius: 10px; border: 3px solid #28a745;" src="">
+        </div>
+        <div id="rec_detalhes" style="margin-top: 20px;"></div>
+        <button onclick="voltarInicio()" class="btn-novo">🔄 Novo Registro</button>
+    </div>
+
+    <div id="adminArea">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>👮‍♂️ Painel de Controle - Comandante</h2>
+            <button onclick="fecharAdmin()" style="background: #dc3545; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">Sair</button>
+        </div>
+        <p>Visão geral de todos os registros salvos neste dispositivo.</p>
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Foto</th><th>Data/Hora</th><th>Tipo</th><th>Policial</th><th>Equipe</th><th>Função</th><th>HT</th><th>Item</th><th>KM</th><th>Área</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaAdmin"></tbody>
+            </table>
+        </div>
+        <button onclick="limparBancoDados()" style="margin-top: 20px; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">🗑️ Limpar Histórico Local</button>
+    </div>
+
+</div>
+
+<script>
+    // --- LINK DE PRODUÇÃO CONFIGURADO ---
+    const N8N_WEBHOOK_URL = 'http://167.71.175.51.nip.io:5678/webhook/78e44c0c-4705-45b4-b0bd-106849701da5'; 
+    const SENHA_ADMIN = "raio190"; 
+
+    // Referências
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const fotoPreview = document.getElementById('fotoPreview');
+    const btnCapturar = document.getElementById('btnCapturar');
+    const btnDesativar = document.getElementById('btnDesativar');
+    const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+    const campoFoto = document.getElementById('foto_base64');
+    
+    const formArea = document.getElementById('formArea');
+    const receiptArea = document.getElementById('receiptArea');
+    const adminArea = document.getElementById('adminArea');
+    const tabelaAdmin = document.getElementById('tabelaAdmin');
+    
+    let streamCamera = null;
+    let cameraLigada = false;
+
+    // --- CÂMERA ---
+    btnCapturar.addEventListener('click', () => {
+        if (!cameraLigada) iniciarCamera();
+        else tirarFoto();
+    });
+
+    btnDesativar.addEventListener('click', pararCameraVisual);
+
+    function iniciarCamera() {
+        btnCapturar.innerText = '⏳ Ligando...';
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
+        .then(stream => { 
+            streamCamera = stream;
+            video.srcObject = stream; 
+            video.onloadedmetadata = () => { video.play(); };
+            video.style.display = 'block';
+            cameraPlaceholder.style.display = 'none';
+            fotoPreview.style.display = 'none';
+            btnCapturar.innerText = '🔘 CAPTURAR';
+            btnCapturar.classList.remove('btn-foto');
+            btnCapturar.classList.add('btn-capturar');
+            btnDesativar.style.display = 'block';
+            cameraLigada = true;
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Erro ao abrir câmera. Verifique permissões.");
+            btnCapturar.innerText = '📸 Ativar Câmera';
+        });
+    }
+
+    function tirarFoto() {
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+        campoFoto.value = dataURL;
+        pararCamera();
+        fotoPreview.src = dataURL;
+        fotoPreview.style.display = 'block';
+        video.style.display = 'none';
+        cameraPlaceholder.style.display = 'none';
+        btnCapturar.innerText = '🔄 Refazer Foto';
+        btnCapturar.classList.add('btn-foto');
+        btnCapturar.classList.remove('btn-capturar');
+        btnDesativar.style.display = 'none';
+        cameraLigada = false;
+    }
+
+    function pararCamera() {
+        if (streamCamera) {
+            streamCamera.getTracks().forEach(track => track.stop());
+            video.srcObject = null;
+        }
+    }
+
+    function pararCameraVisual() {
+        pararCamera();
+        video.style.display = 'none';
+        cameraPlaceholder.style.display = 'inline';
+        fotoPreview.style.display = 'none';
+        btnCapturar.innerText = '📸 Ativar Câmera';
+        btnCapturar.classList.add('btn-foto');
+        btnCapturar.classList.remove('btn-capturar');
+        btnDesativar.style.display = 'none';
+        campoFoto.value = '';
+        cameraLigada = false;
+    }
+
+    // --- DATA ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const now = new Date();
+        const localNow = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+        document.getElementById('timestamp').value = localNow;
+    });
+
+    // --- ENVIO (COM CORREÇÃO NO-CORS) ---
+    document.getElementById('registroForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (!campoFoto.value) return alert("⚠️ A foto é obrigatória!");
+
+        const statusMessage = document.getElementById('statusMessage');
+        statusMessage.innerText = 'Enviando...';
+
+        const dados = {
+            tipo: document.getElementById('tipo').value,
+            nome: document.getElementById('grad_nome').value.toUpperCase(),
+            equipe: document.getElementById('equipe').value.toUpperCase(),
+            funcao: document.getElementById('funcao').value,
+            area: document.getElementById('area').value.toUpperCase(),
+            ht: document.getElementById('ht').value,
+            item: document.getElementById('vtr_armamento').value.toUpperCase(),
+            km: document.getElementById('km_registro').value,
+            data: document.getElementById('timestamp').value.replace('T', ' '),
+            foto: campoFoto.value
+        };
+
+        const formData = new URLSearchParams();
+        for (const key in dados) formData.append(key, dados[key]);
+
+        // ENVIO SEGURO
+        fetch(N8N_WEBHOOK_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Resolve o erro de CORS
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData
+        })
+        .then(() => {
+            statusMessage.innerText = '';
+            pararCameraVisual();
+            salvarLocal(dados);
+
+            document.getElementById('rec_foto').src = dados.foto;
+            document.getElementById('rec_detalhes').innerHTML = `
+                <div class="receipt-item"><span class="receipt-label">Policial:</span><span>${dados.nome}</span></div>
+                <div class="receipt-item"><span class="receipt-label">Equipe:</span><span>${dados.equipe}</span></div>
+                <div class="receipt-item"><span class="receipt-label">Item:</span><span>${dados.item}</span></div>
+            `;
+            
+            formArea.style.display = 'none';
+            receiptArea.style.display = 'block';
+            document.getElementById('registroForm').reset();
+        })
+        .catch(err => {
+            console.error(err);
+            statusMessage.style.color = 'red';
+            statusMessage.innerText = '❌ Erro de conexão (n8n Inativo?).';
+        });
+    });
+
+    function voltarInicio() {
+        receiptArea.style.display = 'none';
+        adminArea.style.display = 'none';
+        formArea.style.display = 'block';
+        window.scrollTo(0, 0);
+    }
+
+    // --- ADMINISTRAÇÃO ---
+    function salvarLocal(dados) {
+        let db = JSON.parse(localStorage.getItem('sgp_raio_db') || '[]');
+        db.unshift(dados);
+        localStorage.setItem('sgp_raio_db', JSON.stringify(db));
+    }
+
+    function acessarAdmin() {
+        const senha = prompt("🔒 Digite a Senha do Comandante:");
+        if (senha === SENHA_ADMIN) {
+            carregarTabelaAdmin();
+            formArea.style.display = 'none';
+            receiptArea.style.display = 'none';
+            adminArea.style.display = 'block';
+        } else {
+            alert("Senha incorreta!");
+        }
+    }
+
+    function fecharAdmin() {
+        adminArea.style.display = 'none';
+        formArea.style.display = 'block';
+    }
+
+    function carregarTabelaAdmin() {
+        const db = JSON.parse(localStorage.getItem('sgp_raio_db') || '[]');
+        tabelaAdmin.innerHTML = '';
+        if (db.length === 0) {
+            tabelaAdmin.innerHTML = '<tr><td colspan="10" style="text-align:center">Nenhum registro.</td></tr>';
+            return;
+        }
+        db.forEach(reg => {
+            tabelaAdmin.innerHTML += `
+                <tr>
+                    <td><img src="${reg.foto}" onclick="window.open('${reg.foto}')"></td>
+                    <td>${reg.data}</td>
+                    <td>${reg.tipo}</td>
+                    <td>${reg.nome}</td>
+                    <td>${reg.equipe}</td>
+                    <td>${reg.funcao}</td>
+                    <td>${reg.ht}</td>
+                    <td>${reg.item}</td>
+                    <td>${reg.km}</td>
+                    <td>${reg.area}</td>
+                </tr>`;
+        });
+    }
+
+    function limparBancoDados() {
+        if(confirm("Apagar todo o histórico local?")) {
+            localStorage.removeItem('sgp_raio_db');
+            carregarTabelaAdmin();
+        }
+    }
+</script>
+
+</body>
+</html>
